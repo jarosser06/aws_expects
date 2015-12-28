@@ -16,8 +16,34 @@ import boto3
 
 class ec2_instances(object):
     def __init__(self):
-        self.count = 2
         self._filters = []
+
+    def with_affinity(self, affinity):
+        self._filters.append(
+                {
+                    'Name': 'affinity',
+                    'Values': [affinity],
+                }
+            )
+        return self
+
+    def with_architecture(self, architecture):
+        self._filters.append(
+                {
+                    'Name': 'architecture',
+                    'Values': [architecture],
+                }
+            )
+        return self
+
+    def with_image_id(self, image_id):
+        self._filters.append(
+                {
+                    'Name': 'image-id',
+                    'Values': [image_id],
+                }
+            )
+        return self
 
     def with_root_device_type(self, name):
         self._filters.append(
@@ -26,7 +52,16 @@ class ec2_instances(object):
                     'Values': [name],
                 }
             )
-        return self._get_instances()
+        return self
+
+    def with_instance_state(self, state):
+        self._filters.append(
+                {
+                    'Name': 'instance-state-name',
+                    'Values': [state],
+                }
+            )
+        return self
 
     def with_tenancy(self, tenancy):
         self._filters.append(
@@ -35,7 +70,7 @@ class ec2_instances(object):
                     'Values': [tenancy],
                 }
             )
-        return self._get_instances()
+        return self
 
     def with_vpc_id(self, vpc_id):
         self._filters.append(
@@ -44,7 +79,7 @@ class ec2_instances(object):
                     'Values': [vpc_id],
                 }
             )
-        return self._get_instances()
+        return self
 
     def with_tags(self, tags):
         for key, val in tags.iteritems():
@@ -57,22 +92,20 @@ class ec2_instances(object):
                     'Values': val,
                 }
             )
-        return self._get_instances()
+        return self
 
-    def _get_instances(self):
+    @property
+    def count(self):
         client = boto3.client('ec2')
         results = client.describe_instances(Filters=self._filters)
         reservations = results.get('Reservations')
         if reservations is None:
-            self.count = 0
-            return self
+            return 0
 
         instances = []
         for reservation in reservations:
             instances.append(reservation.get('Instances'))
         if not instances:
-            self.count = 0
-            return self
+            return 0
 
-        self.count = len(instances)
-        return self
+        return len(instances)
